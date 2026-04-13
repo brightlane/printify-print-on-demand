@@ -1,0 +1,38 @@
+name: Daily SEO Generator
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # runs once per day (02:00 UTC)
+  workflow_dispatch:       # allows manual run button
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Get your repo code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # 3. Install dependencies (if you ever add them)
+      - name: Install dependencies
+        run: npm install || true
+
+      # 4. Run your generator
+      - name: Generate SEO pages
+        run: node generator/generate.js
+
+      # 5. Commit new output back to repo
+      - name: Commit generated pages
+        run: |
+          git config user.name "seo-bot"
+          git config user.email "seo-bot@users.noreply.github.com"
+          git add .
+          git commit -m "daily seo build" || echo "no changes"
+          git push
