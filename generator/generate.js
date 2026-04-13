@@ -5,12 +5,14 @@ const config = require("../config.json");
 const keywords = require("../keywords.json");
 
 const usedPath = path.join(__dirname, "../used.json");
+
 const used = fs.existsSync(usedPath)
   ? JSON.parse(fs.readFileSync(usedPath))
   : [];
 
 const { buildContentV2 } = require("./contentEngineV2");
 const { buildLinkGraph, injectLinks } = require("./linkEngineV2");
+const { generateSitemap } = require("./sitemapEngineV2");
 
 const intents = ["beginner", "problem", "comparison", "strategy", "case"];
 
@@ -77,4 +79,6 @@ batch.forEach((kw, i) => {
 
 fs.writeFileSync(usedPath, JSON.stringify(used, null, 2));
 
-console.log("STEP 5 COMPLETE");
+generateSitemap(pages, config.siteUrl);
+
+console.log("STEP 7 COMPLETE");
