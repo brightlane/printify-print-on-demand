@@ -99,3 +99,33 @@ batch.forEach((kw, i) => {
 fs.writeFileSync(usedPath, JSON.stringify(used, null, 2));
 
 console.log("GitHub-ready build complete");
+function updateHomePage(pages) {
+  const links = pages.map(p => {
+    const name = p.replace(".html", "").replace(/-/g, " ");
+    return `<li><a href="./${p}">${name}</a></li>`;
+  }).join("\n");
+
+  const home = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SEO Content Hub</title>
+</head>
+<body>
+
+<h1>Content Hub</h1>
+
+<ul>
+${links}
+</ul>
+
+<footer>
+<p>Affiliate disclosure: This site may contain affiliate links.</p>
+</footer>
+
+</body>
+</html>
+`;
+
+  fs.writeFileSync(path.join(__dirname, "../index.html"), home);
+}
