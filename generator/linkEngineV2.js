@@ -1,16 +1,14 @@
-function buildLinkGraph(keywords) {
+function slugify(text) {
+  return text.toLowerCase().replace(/ /g, "-");
+}
+
+function buildLinkGraph(batch) {
   const graph = {};
 
-  for (let i = 0; i < keywords.length; i++) {
-    const current = keywords[i];
-
-    const prev = keywords[i - 1] || null;
-    const next = keywords[i + 1] || null;
-
-    graph[current] = {
-      parent: "hub.html",
-      prev,
-      next
+  for (let i = 0; i < batch.length; i++) {
+    graph[batch[i]] = {
+      prev: batch[i - 1] || null,
+      next: batch[i + 1] || null
     };
   }
 
@@ -20,25 +18,19 @@ function buildLinkGraph(keywords) {
 function injectLinks(html, keyword, graph) {
   const node = graph[keyword];
 
-  let links = `<section><h3>Related Reading</h3><ul>`;
+  let links = `<section><h3>Related</h3><ul>`;
 
   if (node.prev) {
-    links += `<li><a href="${slug(node.prev)}.html">${node.prev}</a></li>`;
+    links += `<li><a href="./${slugify(node.prev)}.html">${node.prev}</a></li>`;
   }
 
-  links += `<li><a href="/hub.html">Main Hub</a></li>`;
-
   if (node.next) {
-    links += `<li><a href="${slug(node.next)}.html">${node.next}</a></li>`;
+    links += `<li><a href="./${slugify(node.next)}.html">${node.next}</a></li>`;
   }
 
   links += `</ul></section>`;
 
   return html.replace("</body>", links + "</body>");
-}
-
-function slug(text) {
-  return text.toLowerCase().replace(/ /g, "-");
 }
 
 module.exports = { buildLinkGraph, injectLinks };
