@@ -21,9 +21,7 @@ function slugify(text) {
 }
 
 function getBatch() {
-  return keywords
-    .filter(k => !used.includes(k))
-    .slice(0, config.pagesPerDay);
+  return keywords.filter(k => !used.includes(k)).slice(0, config.pagesPerDay);
 }
 
 function intent(i) {
@@ -66,7 +64,7 @@ batch.forEach((kw, i) => {
   let html = buildPage(
     kw,
     t,
-    buildContentV2(kw, t)
+    buildContentV2(kw)
   );
 
   html = injectLinks(html, kw, graph);
@@ -81,4 +79,4 @@ fs.writeFileSync(usedPath, JSON.stringify(used, null, 2));
 
 generateSitemap(pages, config.siteUrl);
 
-console.log("STEP 7 COMPLETE");
+console.log("SYSTEM READY");
