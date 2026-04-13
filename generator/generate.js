@@ -1,19 +1,17 @@
 const fs = require("fs");
 const config = require("../config.json");
+
 const keywords = require("../keywords.json");
+
 const used = fs.existsSync("../used.json")
   ? JSON.parse(fs.readFileSync("../used.json"))
   : [];
 
 const { buildContentV2 } = require("./contentEngineV2");
+const { buildLinkGraph, injectLinks } = require("./linkEngineV2");
+const { generateSitemap } = require("./sitemapEngineV2");
 
 const intents = ["beginner", "problem", "comparison", "strategy", "case"];
-
-function getBatch() {
-  return keywords
-    .filter(k => !used.includes(k))
-    .slice(0, config.pagesPerDay);
-}
 
 function slugify(text) {
   return text.toLowerCase().replace(/ /g, "-");
@@ -21,6 +19,12 @@ function slugify(text) {
 
 function intent(i) {
   return intents[i % intents.length];
+}
+
+function getBatch() {
+  return keywords
+    .filter(k => !used.includes(k))
+    .slice(0, config.pagesPerDay);
 }
 
 function buildPage(title, intentType, body) {
@@ -48,23 +52,34 @@ ${body}
 `;
 }
 
+// RUN
 const batch = getBatch();
+const graph = buildLinkGraph(batch);
+
+let pages = [];
 
 batch.forEach((kw, i) => {
   const t = intent(i);
   const slug = slugify(kw);
 
-  const html = buildPage(
+  let html = buildPage(
     kw,
     t,
     buildContentV2(kw, t)
   );
 
+  html = injectLinks(html, kw, graph);
+
   fs.writeFileSync(`../output/${slug}.html`, html);
 
   used.push(kw);
+  pages.push(`${slug}.html`);
 });
 
+// update used keywords
 fs.writeFileSync("../used.json", JSON.stringify(used, null, 2));
 
-console.log("STEP 1 COMPLETE: v2 content engine running");
+// generate sitemap
+generateSitemap(pages, config.siteUrl);
+
+console.log("STEP 4 COMPLETE: full system connected");
