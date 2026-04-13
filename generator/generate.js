@@ -4,6 +4,8 @@ const path = require("path");
 const config = require("../config.json");
 const keywords = require("../keywords.json");
 
+const { addSimpleLinks } = require("./linkSimple");
+
 const usedPath = path.join(__dirname, "../used.json");
 const outputDir = path.join(__dirname, "../");
 
@@ -33,17 +35,23 @@ function buildContent(keyword) {
 <h1>${keyword}</h1>
 
 <h2>Overview</h2>
-<p>This is a simple guide about ${keyword}.</p>
+<p>This is a simple, clear guide about ${keyword}.</p>
+
+<h2>How It Works</h2>
+<p>${keyword} is best understood through consistent practice and simple steps.</p>
 
 <h2>Steps</h2>
 <ul>
-  <li>Understand basics</li>
+  <li>Learn the basics</li>
   <li>Apply consistently</li>
   <li>Improve over time</li>
 </ul>
 
+<h2>Common Mistakes</h2>
+<p>Most people fail at ${keyword} due to inconsistency or lack of focus.</p>
+
 <h2>Conclusion</h2>
-<p>${keyword} works best with consistency.</p>
+<p>Success with ${keyword} comes from repetition and clarity.</p>
 `;
 }
 
@@ -68,31 +76,49 @@ ${body}
 `;
 }
 
-// LOAD USED
+// LOAD USED KEYWORDS
 let used = safeReadJSON(usedPath, []);
 
-// PICK KEYWORDS
+// SELECT BATCH
 let batch = keywords.filter(k => !used.includes(k)).slice(0, config.pagesPerDay);
 
 let pages = [];
 
+// GENERATE PAGES
 batch.forEach((kw) => {
   try {
     const slug = slugify(kw);
-    const html = buildPage(kw, buildContent(kw));
+    const fileName = `${slug}.html`;
 
-    const filePath = path.join(outputDir, `${slug}.html`);
+    let html = buildPage(kw, buildContent(kw));
 
+    // save page first
+    const filePath = path.join(outputDir, fileName);
     safeWrite(filePath, html);
 
     used.push(kw);
-    pages.push(`${slug}.html`);
+    pages.push(fileName);
+
   } catch (e) {
     console.log("PAGE ERROR:", kw, e.message);
   }
 });
 
-// SAVE USED
+// ADD INTERNAL LINKS (SECOND PASS)
+pages.forEach((file) => {
+  try {
+    const filePath = path.join(outputDir, file);
+    let html = fs.readFileSync(filePath, "utf-8");
+
+    html = addSimpleLinks(html, pages, file);
+
+    safeWrite(filePath, html);
+  } catch (e) {
+    console.log("LINK ERROR:", file, e.message);
+  }
+});
+
+// SAVE USED KEYWORDS
 safeWrite(usedPath, JSON.stringify(used, null, 2));
 
-console.log("✅ GENERATION COMPLETE - SAFE MODE");
+console.log("✅ GENERATION COMPLETE (FULL SYSTEM)");
