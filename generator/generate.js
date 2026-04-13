@@ -5,10 +5,12 @@ const config = require("../config.json");
 const keywords = require("../keywords.json");
 
 const usedPath = path.join(__dirname, "../used.json");
-
 const used = fs.existsSync(usedPath)
   ? JSON.parse(fs.readFileSync(usedPath))
   : [];
+
+const { buildContentV2 } = require("./contentEngineV2");
+const { buildLinkGraph, injectLinks } = require("./linkEngineV2");
 
 const intents = ["beginner", "problem", "comparison", "strategy", "case"];
 
@@ -17,42 +19,16 @@ function slugify(text) {
 }
 
 function getBatch() {
-  return keywords.filter(k => !used.includes(k)).slice(0, config.pagesPerDay);
+  return keywords
+    .filter(k => !used.includes(k))
+    .slice(0, config.pagesPerDay);
 }
 
 function intent(i) {
   return intents[i % intents.length];
 }
 
-function buildContent(keyword, type) {
-  return `
-<h1>${keyword}</h1>
-
-<h2>Introduction</h2>
-<p>This guide explains ${keyword} in a simple and practical way.</p>
-
-<h2>Core Idea</h2>
-<p>${keyword} works based on real-world application, not theory.</p>
-
-<h2>Steps</h2>
-<ul>
-  <li>Learn the basics</li>
-  <li>Apply consistently</li>
-  <li>Improve over time</li>
-</ul>
-
-<h2>Mistakes</h2>
-<p>Most failures happen due to inconsistency or lack of strategy.</p>
-
-<h2>FAQ</h2>
-<p>Q: Is ${keyword} hard?<br>A: It depends on execution.</p>
-
-<h2>Conclusion</h2>
-<p>Success with ${keyword} comes from repetition and practice.</p>
-`;
-}
-
-function buildPage(title, content, intentType) {
+function buildPage(title, intentType, body) {
   return `
 <!DOCTYPE html>
 <html>
@@ -62,9 +38,10 @@ function buildPage(title, content, intentType) {
 </head>
 <body>
 
-<p><strong>${intentType.toUpperCase()}</strong></p>
+<h1>${title}</h1>
+<p>${intentType.toUpperCase()}</p>
 
-${content}
+${body}
 
 <footer>
 <p>Affiliate disclosure: This site may contain affiliate links.</p>
@@ -75,57 +52,29 @@ ${content}
 `;
 }
 
-// RUN GENERATION
 const batch = getBatch();
+const graph = buildLinkGraph(batch);
+
+let pages = [];
 
 batch.forEach((kw, i) => {
   const t = intent(i);
   const slug = slugify(kw);
 
-  const html = buildPage(
+  let html = buildPage(
     kw,
-    buildContent(kw, t),
-    t
+    t,
+    buildContentV2(kw, t)
   );
 
-  const outputPath = path.join(__dirname, `../${slug}.html`);
+  html = injectLinks(html, kw, graph);
 
-  fs.writeFileSync(outputPath, html);
+  fs.writeFileSync(path.join(__dirname, `../${slug}.html`), html);
 
   used.push(kw);
+  pages.push(`${slug}.html`);
 });
 
-// save used keywords
 fs.writeFileSync(usedPath, JSON.stringify(used, null, 2));
 
-console.log("GitHub-ready build complete");
-function updateHomePage(pages) {
-  const links = pages.map(p => {
-    const name = p.replace(".html", "").replace(/-/g, " ");
-    return `<li><a href="./${p}">${name}</a></li>`;
-  }).join("\n");
-
-  const home = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>SEO Content Hub</title>
-</head>
-<body>
-
-<h1>Content Hub</h1>
-
-<ul>
-${links}
-</ul>
-
-<footer>
-<p>Affiliate disclosure: This site may contain affiliate links.</p>
-</footer>
-
-</body>
-</html>
-`;
-
-  fs.writeFileSync(path.join(__dirname, "../index.html"), home);
-}
+console.log("STEP 5 COMPLETE");
