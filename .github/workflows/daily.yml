@@ -2,37 +2,39 @@ name: Daily SEO Generator
 
 on:
   schedule:
-    - cron: "0 2 * * *"   # runs once per day (02:00 UTC)
-  workflow_dispatch:       # allows manual run button
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # prevent runaway jobs
 
     steps:
-      # 1. Get your repo code
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      # 2. Setup Node.js
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
 
-      # 3. Install dependencies (if you ever add them)
-      - name: Install dependencies
-        run: npm install || true
+    - name: Install deps
+      run: npm install
 
-      # 4. Run your generator
-      - name: Generate SEO pages
-        run: node generator/generate.js
+    - name: Run generator
+      run: node generate.js
 
-      # 5. Commit new output back to repo
-      - name: Commit generated pages
-        run: |
-          git config user.name "seo-bot"
-          git config user.email "seo-bot@users.noreply.github.com"
-          git add .
-          git commit -m "daily seo build" || echo "no changes"
-          git push
+    - name: Commit only if changes
+      run: |
+        git config user.name "seo-bot"
+        git config user.email "seo-bot@example.com"
+
+        git add .
+
+        # Skip commit if nothing changed
+        if git diff --cached --quiet; then
+          echo "No changes"
+          exit 0
+        fi
+
+        git commit -m "daily seo build"
+        git push
