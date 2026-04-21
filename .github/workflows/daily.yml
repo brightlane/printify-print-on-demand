@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # prevent runaway jobs
+    timeout-minutes: 20
 
     steps:
     - uses: actions/checkout@v4
@@ -17,20 +17,16 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install deps
-      run: npm install
-
     - name: Run generator
-      run: node generate.js
+      run: node generator/generate.js
 
-    - name: Commit only if changes
+    - name: Commit changes
       run: |
         git config user.name "seo-bot"
         git config user.email "seo-bot@example.com"
 
         git add .
 
-        # Skip commit if nothing changed
         if git diff --cached --quiet; then
           echo "No changes"
           exit 0
