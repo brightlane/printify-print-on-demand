@@ -1,3 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Home Page -->
+  <url>
+    <loc>https://brightlane.github.io/printify-print-on-demand/</loc>
+    <lastmod>2023-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.00</priority>
+  </url>
+
+  <!-- About Page -->
+  <url>
+    <loc>https://brightlane.github.io/printify-print-on-demand/about.html</loc>
+    <lastmod>2023-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Services Page -->
+  <url>
+    <loc>https://brightlane.github.io/printify-print-on-demand/services.html</loc>
+    <lastmod>2023-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Blog Page -->
+  <url>
+    <loc>https://brightlane.github.io/printify-print-on-demand/blog.html</loc>
+    <lastmod>2023-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.60</priority>
+  </url>
+
+  <!-- Contact Page -->
+  <url>
+    <loc>https://brightlane.github.io/printify-print-on-demand/contact.html</loc>
+    <lastmod>2023-04-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Products Page -->
+  <url>
+    <loc>https://brightlane.github.io/printify-print-on-demand/products.html</loc>
+    <lastmod>2023-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
 </urlset>
