@@ -1,10 +1,21 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>404</title>
-</head>
-<body>
-  <h1>Page Not Found</h1>
-  <a href="/">Home</a>
-</body>
-</html>
+# robots.txt for https://brightlane.github.io/printify-print-on-demand/
+
+# General instructions for all user agents
+User-agent: *
+# Disallow certain paths you don't want crawlers to index
+Disallow: /admin/
+Disallow: /private/
+# Allow crawlers to index public resources
+Allow: /public/
+
+# Sitemap for search engines to find all pages
+Sitemap: https://brightlane.github.io/printify-print-on-demand/sitemap.xml
+
+# Custom rules for specific bots
+User-agent: Googlebot
+# Googlebot can index everything except the private sections
+Disallow: /private/
+
+User-agent: Bingbot
+# Bingbot can index everything except the admin section
+Disallow: /admin/
