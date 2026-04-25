@@ -1,161 +1,57 @@
 const fs = require("fs");
 const path = require("path");
 
-const config = require("../config.json");
+// Prevent runaway builds
+const MAX_ITEMS = 50;
 
-const { addSimpleLinks } = require("./linkSimple");
-const { replenishKeywords } = require("./keywordReplenish");
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-const keywordsPath = path.join(__dirname, "../keywords.json");
-const usedPath = path.join(__dirname, "../used.json");
-const outputDir = path.join(__dirname, "../");
+// Example input (replace with your real data source)
+function getItems() {
+  return Array.from({ length: 200 }, (_, i) => ({
+    keyword: `seo keyword ${i + 1}`
+  }));
+}
 
-function safeReadJSON(file, fallback) {
-  try {
-    if (!fs.existsSync(file)) return fallback;
-    return JSON.parse(fs.readFileSync(file));
-  } catch {
-    return fallback;
+async function generate(item) {
+  const outputDir = path.join(__dirname, "output");
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
   }
-}
 
-function safeWrite(file, data) {
-  try {
-    fs.writeFileSync(file, data);
-  } catch (e) {
-    console.log("WRITE ERROR:", e.message);
-  }
-}
+  const fileName = item.keyword.replace(/\s+/g, "-") + ".txt";
+  const filePath = path.join(outputDir, fileName);
 
-function slugify(text) {
-  return text.toLowerCase().replace(/ /g, "-");
-}
-
-function buildContent(keyword) {
-  return `
-<h1>${keyword}</h1>
-
-<h2>Overview</h2>
-<p>This is a clear guide about ${keyword}.</p>
-
-<h2>How It Works</h2>
-<p>${keyword} works through simple steps and consistent execution.</p>
-
-<h2>Steps</h2>
-<ul>
-  <li>Understand basics</li>
-  <li>Apply consistently</li>
-  <li>Improve over time</li>
-</ul>
-
-<h2>Common Mistakes</h2>
-<p>Most failures in ${keyword} come from inconsistency.</p>
-
-<h2>Conclusion</h2>
-<p>${keyword} improves with practice and repetition.</p>
-`;
-}
-
-function buildPage(title, body) {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>${title}</title>
-  <meta name="description" content="${title}">
-</head>
-<body>
-
-${body}
-
-<footer>
-<p>Affiliate disclosure: this site may contain affiliate links.</p>
-</footer>
-
-</body>
-</html>
-`;
-}
-
-function updateHub(pages) {
-  const list = pages.map(p => {
-    const name = p.replace(".html", "").replace(/-/g, " ");
-    return `<li><a href="./${p}">${name}</a></li>`;
-  }).join("\n");
-
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Content Hub</title>
-</head>
-<body>
-
-<h1>Content Hub</h1>
-
-<ul>
-${list}
-</ul>
-
-</body>
-</html>
+  const content = `
+TITLE: ${item.keyword}
+DESCRIPTION: Generated SEO content for ${item.keyword}
 `;
 
-  safeWrite(path.join(outputDir, "index.html"), html);
+  fs.writeFileSync(filePath, content.trim());
 }
 
-// LOAD DATA
-let used = safeReadJSON(usedPath, []);
-let keywords = safeReadJSON(keywordsPath, []);
+// MAIN PIPELINE (SAFE)
+async function run() {
+  const items = getItems().slice(0, MAX_ITEMS);
 
-// 🔁 SELF-REPLENISH KEYWORDS
-replenishKeywords();
-keywords = safeReadJSON(keywordsPath, []);
+  console.log(`Processing ${items.length} items...`);
 
-// SELECT BATCH
-let batch = keywords
-  .filter(k => !used.includes(k))
-  .slice(0, config.pagesPerDay);
+  for (let i = 0; i < items.length; i++) {
+    try {
+      await generate(items[i]);
+      console.log(`✔ Generated ${i + 1}/${items.length}`);
 
-let pages = [];
+      // prevent GitHub Actions overload
+      await sleep(200);
 
-// GENERATE PAGES
-batch.forEach((kw) => {
-  try {
-    const slug = slugify(kw);
-    const fileName = `${slug}.html`;
-
-    let html = buildPage(kw, buildContent(kw));
-
-    const filePath = path.join(outputDir, fileName);
-    safeWrite(filePath, html);
-
-    used.push(kw);
-    pages.push(fileName);
-
-  } catch (e) {
-    console.log("PAGE ERROR:", kw, e.message);
+    } catch (err) {
+      console.error(`✖ Failed:`, items[i], err.message);
+    }
   }
-});
 
-// SAVE USED KEYWORDS
-safeWrite(usedPath, JSON.stringify(used, null, 2));
+  console.log("DONE: generation complete");
+}
 
-// APPLY INTERNAL LINKS (SECOND PASS)
-pages.forEach((file) => {
-  try {
-    const filePath = path.join(outputDir, file);
-    let html = fs.readFileSync(filePath, "utf-8");
-
-    html = addSimpleLinks(html, pages, file);
-
-    safeWrite(filePath, html);
-  } catch (e) {
-    console.log("LINK ERROR:", file, e.message);
-  }
-});
-
-// UPDATE HUB
-updateHub(pages);
-
-console.log("✅ FULL GENERATION COMPLETE (SELF-REPLENISH + HUB + LINKS)");
+run();
